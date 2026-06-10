@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CampusRide — Design Document</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; color: #1a1d24; font-size: 10.5pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 2pt; color: #4338ca; }
+  h2 { font-size: 14pt; margin: 18pt 0 6pt; color: #312e81; border-bottom: 2px solid #c7d2fe; padding-bottom: 3pt; }
+  h3 { font-size: 11.5pt; margin: 12pt 0 4pt; color: #3730a3; }
+  p { margin: 5pt 0; }
+  .subtitle { color: #555; font-size: 11pt; margin: 0 0 2pt; }
+  .meta { color: #777; font-size: 9pt; margin-bottom: 6pt; }
+  code { font-family: 'Consolas', monospace; background: #f1f3f9; padding: 1px 4px; border-radius: 3px; font-size: 9pt; }
+  pre { background: #0f1117; color: #e8eaf0; padding: 10pt; border-radius: 6px; font-family: 'Consolas', monospace;
+        font-size: 8pt; line-height: 1.4; overflow-x: auto; white-space: pre; }
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0; font-size: 9pt; }
+  th, td { border: 1px solid #d4d8e3; padding: 4pt 6pt; text-align: left; vertical-align: top; }
+  th { background: #eef2ff; color: #312e81; }
+  ul, ol { margin: 4pt 0; padding-left: 18pt; }
+  li { margin: 2pt 0; }
+  .pill { display: inline-block; background: #4338ca; color: #fff; padding: 1px 8px; border-radius: 10px; font-size: 8pt; }
+  .nobreak { page-break-inside: avoid; }
+  .pagebreak { page-break-before: always; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 10pt 0; }
+  .erd { width: 100%; max-width: 540px; display: block; margin: 6pt auto; }
+  .small { font-size: 9pt; color: #555; }
+</style>
+</head>
+<body>
+
+<h1>CampusRide — Design Document</h1>
+<p class="subtitle">Real-Time Campus Mobility &amp; Ride Management Platform</p>
+<p class="meta">Cult Open Projects 2027 · Software Development &nbsp;|&nbsp; Stack: MERN + Socket.IO</p>
+<hr>
+
+<h2>1. Problem Understanding</h2>
+<p>Large campuses such as IIT Roorkee depend on e-rickshaws for last-mile transport, but ride
+requests and driver availability are coordinated through fragmented, informal mechanisms. This
+causes inefficient resource use, delays, uneven demand distribution and a poor experience for
+both riders and drivers.</p>
+<p><strong>Goal:</strong> a centralized, real-time platform where passengers and drivers connect to
+<em>discover, request, assign, track and complete</em> rides reliably within a campus.</p>
+<p>The engineering challenges mirrored from production ride-hailing systems are:</p>
+<ul>
+  <li><strong>Real-time communication</strong> — both sides must see state changes instantly.</li>
+  <li><strong>Consistent ride state</strong> — one well-defined lifecycle; a request assigned to <strong>exactly one</strong> driver.</li>
+  <li><strong>Multi-user coordination</strong> — many passengers and drivers acting concurrently.</li>
+  <li><strong>Geospatial handling</strong> — pickup, destination and driver positions on a map.</li>
+  <li><strong>Insight</strong> — dashboards and demand analytics for drivers and operators.</li>
+</ul>
+<p><strong>Scope delivered:</strong> all seven mandatory features (authentication, availability,
+request workflow, real-time updates, lifecycle, driver dashboard, ratings) plus two bonus
+features — <strong>live map</strong> and <strong>demand analytics</strong>. Payments, scheduling and
+ML forecasting were deliberately scoped out to keep the core workflow reliable, following the
+guideline that <em>"a reliable ride management system is preferable to numerous incomplete features."</em></p>
+
+<h2>2. System Architecture</h2>
+<p>CampusRide is a <strong>three-tier MERN application</strong> with a dedicated real-time channel.</p>
+<pre>
++-------------------------------------------------------------------+
+|                       CLIENT  (React + Vite)                      |
+|   Passenger UI | Driver UI | Dashboard | Map (Leaflet) | Charts   |
+|        ^                                       ^                   |
+|   REST | (Axios + JWT)               WebSocket | (socket.io)      |
++--------|---------------------------------------|-------------------+
+         |                                       |
++--------v---------------------------------------v-------------------+
+|                    SERVER  (Node.js + Express)                    |
+|  Routes -> Controllers -> Services     Socket.IO (rooms + auth)   |
+|  Middleware: JWT auth, role guard, error handling                 |
+|  Emit registry bridges REST actions -> real-time events           |
++----------------------------------+--------------------------------+
+                                   |  Mongoose ODM
+                        +----------v-----------+
+                        |  MongoDB (Atlas /    |
+                        |  local / in-memory)  |
+                        |  Users | Rides |     |
+                        |  Ratings             |
+                        +----------------------+
+</pre>
+
+<h3>Request vs. real-time split</h3>
+<ul>
+  <li><strong>REST</strong> is the source of truth for every state mutation (request, accept, start,
+  complete, cancel, rate). Each endpoint validates, persists, then <strong>emits</strong> the result.</li>
+  <li><strong>Socket.IO</strong> only <em>pushes</em> those changes to relevant clients — never the sole
+  authority — so state stays consistent even when a socket reconnects.</li>
+</ul>
+
+<h3>Socket room model</h3>
+<table class="nobreak">
+  <tr><th>Room</th><th>Members</th><th>Used for</th></tr>
+  <tr><td><code>user:&lt;id&gt;</code></td><td>one user</td><td>personal notifications</td></tr>
+  <tr><td><code>drivers</code></td><td>all connected drivers</td><td>broadcasting new ride requests</td></tr>
+  <tr><td><code>passengers</code></td><td>all connected passengers</td><td>driver availability / location feed</td></tr>
+  <tr><td><code>ride:&lt;rideId&gt;</code></td><td>ride's passenger + driver</td><td>per-ride lifecycle updates</td></tr>
+</table>
+<p class="small">Sockets authenticate with the same JWT during the handshake, so every event is scoped to an authorised user.</p>
+
+<h3>Ride lifecycle (state machine)</h3>
+<pre>
+  request            accept           start          complete
+(none) --> requested --> accepted --> in_progress --> completed
+                |            |              |
+                +------------+--------------+
+                     cancel (passenger / driver)
+                            v
+                        cancelled
+</pre>
+<p>Transitions are guarded server-side: a ride can only move along allowed edges, and only by an authorised participant.</p>
+
+<div class="pagebreak"></div>
+
+<h2>3. Database Schema</h2>
+<p>MongoDB document model via Mongoose — three collections.</p>
+
+<h3>users</h3>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+  <tr><td>_id</td><td>ObjectId</td><td>PK</td></tr>
+  <tr><td>name</td><td>String</td><td>required</td></tr>
+  <tr><td>email</td><td>String</td><td>required, unique, lowercased</td></tr>
+  <tr><td>phone</td><td>String</td><td></td></tr>
+  <tr><td>passwordHash</td><td>String</td><td>bcrypt; never returned (select:false)</td></tr>
+  <tr><td>role</td><td>String</td><td>passenger | driver</td></tr>
+  <tr><td>vehicle</td><td>Object</td><td>(driver) type, model, plateNumber, color, capacity</td></tr>
+  <tr><td>verification</td><td>Object</td><td>(driver) licenseNumber, verified</td></tr>
+  <tr><td>isOnline</td><td>Boolean</td><td>(driver) availability switch</td></tr>
+  <tr><td>availabilityStatus</td><td>String</td><td>available | busy | offline</td></tr>
+  <tr><td>currentLocation</td><td>Object</td><td>lat, lng, label, updatedAt</td></tr>
+  <tr><td>ratingAvg / ratingCount</td><td>Number</td><td>(driver) aggregate rating</td></tr>
+</table>
+
+<h3>rides</h3>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+  <tr><td>_id</td><td>ObjectId</td><td>PK</td></tr>
+  <tr><td>passenger</td><td>ObjectId &rarr; users</td><td>required, indexed</td></tr>
+  <tr><td>driver</td><td>ObjectId &rarr; users</td><td>nullable until accepted, indexed</td></tr>
+  <tr><td>pickup / destination</td><td>Point</td><td>{ label, lat, lng }</td></tr>
+  <tr><td>status</td><td>String</td><td>requested / accepted / in_progress / completed / cancelled</td></tr>
+  <tr><td>distanceKm / fare</td><td>Number</td><td>computed (haversine; base + per-km)</td></tr>
+  <tr><td>rejectedBy</td><td>[ObjectId]</td><td>drivers who declined (not re-offered)</td></tr>
+  <tr><td>requestedAt … cancelledAt</td><td>Date</td><td>lifecycle timestamps</td></tr>
+  <tr><td>cancelledBy</td><td>String</td><td>passenger | driver</td></tr>
+  <tr><td>rated</td><td>Boolean</td><td>guards one rating per ride</td></tr>
+</table>
+
+<h3>ratings</h3>
+<table>
+  <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+  <tr><td>_id</td><td>ObjectId</td><td>PK</td></tr>
+  <tr><td>ride</td><td>ObjectId &rarr; rides</td><td>unique (one rating per ride)</td></tr>
+  <tr><td>passenger</td><td>ObjectId &rarr; users</td><td>author</td></tr>
+  <tr><td>driver</td><td>ObjectId &rarr; users</td><td>subject, indexed</td></tr>
+  <tr><td>stars</td><td>Number</td><td>1–5</td></tr>
+  <tr><td>feedback</td><td>String</td><td>optional</td></tr>
+</table>
+<p class="small"><strong>Indexes:</strong> users.email (unique), rides.passenger, rides.driver,
+rides.status+createdAt, ratings.ride (unique), ratings.driver.</p>
+
+<h2>4. Entity Relationship Diagram (ERD)</h2>
+<svg class="erd" viewBox="0 0 540 470" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial" font-size="11">
+  <!-- USER -->
+  <rect x="180" y="10" width="180" height="120" rx="8" fill="#eef2ff" stroke="#4338ca" stroke-width="1.5"/>
+  <text x="270" y="30" text-anchor="middle" font-weight="bold" fill="#312e81">USER</text>
+  <line x1="190" y1="38" x2="350" y2="38" stroke="#c7d2fe"/>
+  <text x="192" y="54" fill="#1a1d24">PK  _id</text>
+  <text x="192" y="70" fill="#1a1d24">name, email, phone</text>
+  <text x="192" y="86" fill="#1a1d24">role (passenger|driver)</text>
+  <text x="192" y="102" fill="#1a1d24">vehicle, isOnline, status</text>
+  <text x="192" y="118" fill="#1a1d24">ratingAvg, ratingCount</text>
+
+  <!-- RIDE -->
+  <rect x="180" y="190" width="180" height="120" rx="8" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+  <text x="270" y="210" text-anchor="middle" font-weight="bold" fill="#065f46">RIDE</text>
+  <line x1="190" y1="218" x2="350" y2="218" stroke="#a7f3d0"/>
+  <text x="192" y="234" fill="#1a1d24">PK  _id</text>
+  <text x="192" y="250" fill="#1a1d24">FK  passenger → USER</text>
+  <text x="192" y="266" fill="#1a1d24">FK  driver → USER (null)</text>
+  <text x="192" y="282" fill="#1a1d24">pickup, destination, status</text>
+  <text x="192" y="298" fill="#1a1d24">distanceKm, fare, timestamps</text>
+
+  <!-- RATING -->
+  <rect x="180" y="370" width="180" height="92" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="270" y="390" text-anchor="middle" font-weight="bold" fill="#92400e">RATING</text>
+  <line x1="190" y1="398" x2="350" y2="398" stroke="#fde68a"/>
+  <text x="192" y="414" fill="#1a1d24">PK  _id</text>
+  <text x="192" y="430" fill="#1a1d24">FK  ride (unique) → RIDE</text>
+  <text x="192" y="446" fill="#1a1d24">stars (1-5), feedback</text>
+
+  <!-- relationships -->
+  <line x1="270" y1="130" x2="270" y2="190" stroke="#475569" stroke-width="1.5"/>
+  <polygon points="270,190 265,180 275,180" fill="#475569"/>
+  <text x="280" y="165" fill="#475569" font-size="10">places / fulfils (1..*)</text>
+
+  <line x1="270" y1="310" x2="270" y2="370" stroke="#475569" stroke-width="1.5"/>
+  <polygon points="270,370 265,360 275,360" fill="#475569"/>
+  <text x="280" y="345" fill="#475569" font-size="10">receives (0..1)</text>
+</svg>
+<ul class="small">
+  <li>A <strong>passenger</strong> places many <strong>rides</strong> (1‑to‑many).</li>
+  <li>A <strong>driver</strong> fulfils many <strong>rides</strong> (a ride has 0‑or‑1 driver).</li>
+  <li>A <strong>ride</strong> receives 0‑or‑1 <strong>rating</strong>; a rating references its ride, passenger and driver.</li>
+</ul>
+
+<div class="pagebreak"></div>
+
+<h2>5. API Overview</h2>
+<p>Base URL <code>/api</code>. JSON over HTTP; JWT bearer auth; real-time via Socket.IO.</p>
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
+  <tr><td>POST</td><td>/auth/register</td><td>—</td><td>Register (passenger or driver)</td></tr>
+  <tr><td>POST</td><td>/auth/login</td><td>—</td><td>Login, returns JWT</td></tr>
+  <tr><td>GET</td><td>/auth/me</td><td>any</td><td>Current user</td></tr>
+  <tr><td>PATCH</td><td>/auth/profile</td><td>any</td><td>Update profile / vehicle</td></tr>
+  <tr><td>GET</td><td>/drivers/available</td><td>any</td><td>List online &amp; available drivers</td></tr>
+  <tr><td>PATCH</td><td>/drivers/availability</td><td>driver</td><td>Go online / offline</td></tr>
+  <tr><td>PATCH</td><td>/drivers/location</td><td>driver</td><td>Update live location</td></tr>
+  <tr><td>POST</td><td>/rides</td><td>passenger</td><td>Request a ride</td></tr>
+  <tr><td>GET</td><td>/rides</td><td>any</td><td>My rides</td></tr>
+  <tr><td>GET</td><td>/rides/requests</td><td>driver</td><td>Open requests to accept</td></tr>
+  <tr><td>PATCH</td><td>/rides/:id/accept</td><td>driver</td><td>Accept (atomic single assignment)</td></tr>
+  <tr><td>PATCH</td><td>/rides/:id/{reject,start,complete,cancel}</td><td>driver / participant</td><td>Lifecycle transitions</td></tr>
+  <tr><td>POST</td><td>/ratings</td><td>passenger</td><td>Rate a completed ride</td></tr>
+  <tr><td>GET</td><td>/ratings/driver/:id</td><td>any</td><td>Driver feedback history</td></tr>
+  <tr><td>GET</td><td>/analytics/driver</td><td>driver</td><td>Driver dashboard metrics</td></tr>
+  <tr><td>GET</td><td>/analytics/demand</td><td>any</td><td>Campus demand analytics (bonus)</td></tr>
+</table>
+<p><strong>Real-time events:</strong> <code>ride:new</code>, <code>ride:assigned</code>,
+<code>ride:updated</code>, <code>ride:cancelled</code>, <code>ride:requestClosed</code>,
+<code>driver:availability</code>, <code>driver:location</code>.</p>
+<p class="small"><strong>Example — atomic accept:</strong> <code>findOneAndUpdate({ _id, status:'requested',
+driver:null }, { driver, status:'accepted' })</code> &rarr; emits <code>ride:assigned</code> to the
+passenger and <code>ride:requestClosed</code> to other drivers.</p>
+
+<h2>6. Design Decisions</h2>
+<ol>
+  <li><strong>REST for truth, sockets for push.</strong> All mutations go through validated REST
+  endpoints; Socket.IO only broadcasts results — avoiding race conditions and surviving reconnects.</li>
+  <li><strong>Atomic single-driver assignment.</strong> Acceptance is a single conditional
+  <code>findOneAndUpdate</code> (<code>status:'requested', driver:null</code>). MongoDB guarantees only
+  one concurrent driver wins; others get a clear "already taken" response — satisfying
+  "a ride can only be assigned to a single driver."</li>
+  <li><strong>Server-guarded state machine.</strong> Lifecycle transitions are validated server-side
+  (allowed edges + participant/role checks), so the UI can never force an invalid state.</li>
+  <li><strong>Room-scoped events.</strong> Emitting to <code>user:</code>, <code>ride:</code>,
+  <code>drivers</code>, <code>passengers</code> rooms delivers only relevant events — efficient and scalable.</li>
+  <li><strong>JWT + role middleware.</strong> Stateless auth scales horizontally; <code>requireRole</code>
+  centralises authorisation; passwords are bcrypt-hashed and never serialized.</li>
+  <li><strong>Zero-setup dev experience.</strong> An in-memory MongoDB option with auto-seeding lets
+  evaluators run the full stack with only Node installed; a real <code>MONGO_URI</code> is a one-line switch.</li>
+  <li><strong>Computed fare/distance.</strong> Haversine distance + a transparent base+per-km fare keep
+  estimates deterministic without a paid routing API.</li>
+  <li><strong>Scalability path.</strong> Stateless API behind a load balancer; Socket.IO scales across
+  nodes via a Redis adapter; indexes on hot query paths keep reads fast as data grows.</li>
+</ol>
+<h3>Trade-offs &amp; future work</h3>
+<ul>
+  <li>Matching is <strong>broadcast-to-all-online</strong> (simple, transparent) rather than
+  proximity-ranked dispatch — a geo-nearest assignment is the natural next step.</li>
+  <li>Payments, scheduling and ML demand forecasting are scoped out, but the schema (timestamps,
+  locations) already supports adding them.</li>
+</ul>
+
+</body>
+</html>
