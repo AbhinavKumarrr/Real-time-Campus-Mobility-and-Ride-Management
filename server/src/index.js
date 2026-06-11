@@ -14,7 +14,7 @@ async function start() {
   if (env.useMemoryDb) {
     const count = await User.estimatedDocumentCount();
     if (count === 0) {
-      console.log('🌱 In-memory DB is empty — seeding demo data...');
+      console.log('In-memory DB is empty — seeding demo data...');
       await seedDatabase({ log: (m) => console.log('   ' + m) });
       console.log('   Demo logins (password: password123): ananya@iitr.ac.in / suresh@iitr.ac.in');
     }
@@ -25,12 +25,12 @@ async function start() {
   initSockets(server, env.clientOrigins);
 
   server.listen(env.port, () => {
-    console.log(`🚀 Campus Ride API listening on http://localhost:${env.port}`);
-    console.log(`🌐 Allowed client origins: ${env.clientOrigins.join(', ')}`);
+    console.log(`Campus Ride API listening on http://localhost:${env.port}`);
+    console.log(`Allowed client origins: ${env.clientOrigins.join(', ')}`);
   });
 }
 
 start().catch((err) => {
-  console.error('❌ Failed to start server:', err);
+  console.error('Failed to start server:', err);
   process.exit(1);
 });
