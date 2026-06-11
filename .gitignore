@@ -34,3 +34,9 @@ _pdf_text.txt
 coverage/
 .cache/
 .mongo-data/
+
+
+client/node_modules/
+server/node_modules/
+
+*.env
