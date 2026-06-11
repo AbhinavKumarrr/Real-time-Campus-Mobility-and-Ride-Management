@@ -1,11 +1,8 @@
-# 🛺 CampusRide — Real-Time Campus Mobility & Ride Management Platform
+# 🛺 Real-Time Campus Mobility & Ride Management Platform
 
-A full-stack platform that connects **passengers** with **e-rickshaw drivers** on a
-campus in real time. Passengers request rides, drivers accept and fulfil them, and
-both sides see live status updates powered by **WebSockets (Socket.IO)** — modelled
-on the last-mile transportation problem at large campuses such as IIT Roorkee.
+It is a full-stack real-time ride management platform that connects **passengers** with **e-rickshaw drivers** inside a campus environment. Passengers can request rides, drivers can accept and manage them, and both sides receive live status updates through **Socket.IO**.
 
-> Built for the **Cult Open Projects 2027 — Software Development** problem statement.
+It is designed around the last-mile transportation problem seen in large campuses such as IIT Roorkee, where ride coordination is often fragmented and informal.
 
 ---
 
@@ -72,92 +69,174 @@ campus-ride-platform/
 
 ---
 
-## 🚀 Setup Instructions
+## 🚀 Clone, Install & Run Locally
 
 ### Prerequisites
-- **Node.js ≥ 18** ([nodejs.org](https://nodejs.org))
-- **MongoDB** — *optional*. By default the server runs an **in-memory MongoDB**, so
-  you can run the whole app with **zero database setup**. For persistence, install
-  MongoDB locally or use a free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster.
 
-### 1. Clone & install
+Before running the project, ensure the following are installed:
+
+* Node.js (v18 or later)
+* npm
+* Git
+
+MongoDB installation is optional because the project supports an in-memory database for quick setup and testing.
+
+---
+
+## 1. Clone the Repository
+
 ```bash
-git clone <your-repo-url> campus-ride-platform
-cd campus-ride-platform
-
-# Install both server and client dependencies
-npm run install:all
-# (equivalent to: cd server && npm install  &&  cd ../client && npm install)
-```
-
-### 2. Configure environment
-Copy the example env files (defaults work out of the box):
-```bash
-# Windows (PowerShell)
-Copy-Item server/.env.example server/.env
-Copy-Item client/.env.example client/.env
-
-# macOS / Linux
-cp server/.env.example server/.env
-cp client/.env.example client/.env
-```
-
-**Server (`server/.env`)** — key settings:
-| Variable        | Default                                | Notes                                   |
-|-----------------|----------------------------------------|-----------------------------------------|
-| `PORT`          | `5000`                                 | API port                                |
-| `USE_MEMORY_DB` | `true`                                 | `true` = zero-setup in-memory MongoDB   |
-| `MONGO_URI`     | `mongodb://127.0.0.1:27017/campus_ride`| used when `USE_MEMORY_DB=false`         |
-| `JWT_SECRET`    | *(set a long random string)*           | token signing secret                    |
-| `CLIENT_ORIGIN` | `http://localhost:5173`                | allowed CORS / Socket.IO origin         |
-
-**Client (`client/.env`)**:
-```
-VITE_API_URL=http://localhost:5000
+git clone https://github.com/AbhinavKumarrr/Real-time-Campus-Mobility-and-Ride-Management.git
+cd Real-time-Campus-Mobility-and-Ride-Management
 ```
 
 ---
 
-## ▶️ Running the Application
+## 2. Install Dependencies
 
-### Option A — one command (recommended)
-From the project root:
-```bash
-npm install          # installs the root 'concurrently' helper (once)
-npm run dev          # starts server (:5000) and client (:5173) together
-```
+### Backend Dependencies
 
-### Option B — two terminals
 ```bash
-# Terminal 1 — API + real-time server
 cd server
-npm run dev
+npm install
+```
 
-# Terminal 2 — React app
+### Frontend Dependencies
+
+Open a new terminal and run:
+
+```bash
 cd client
+npm install
+```
+
+---
+
+## 3. Configure Environment Variables
+
+Create `.env` files using the provided examples.
+
+### Backend
+
+```bash
+cp server/.env.example server/.env
+```
+
+### Frontend
+
+```bash
+cp client/.env.example client/.env
+```
+
+Default values provided in the example files are sufficient for local development.
+
+---
+
+## 4. Start the Backend Server
+
+From the `server` directory:
+
+```bash
 npm run dev
 ```
 
-Then open **http://localhost:5173**.
+Backend will start on:
 
-> **Demo data:** When `USE_MEMORY_DB=true`, the server **auto-seeds** demo passengers,
-> drivers and historical rides on first start. With a **persistent** database, run the
-> seed manually: `npm run seed` (from root) or `cd server && npm run seed`.
+```text
+http://localhost:5000
+```
 
-### 🔑 Demo accounts (password: `password123`)
-| Role      | Email                |
-|-----------|----------------------|
-| Passenger | `ananya@iitr.ac.in`  |
-| Driver    | `suresh@iitr.ac.in`  |
-| Driver    | `mahesh@iitr.ac.in`  |
+---
 
-*(Or register your own passenger/driver accounts from the sign-up page.)*
+## 5. Start the Frontend Application
+
+Open another terminal and navigate to the `client` directory:
+
+```bash
+npm run dev
+```
+
+Frontend will start on:
+
+```text
+http://localhost:5173
+```
+
+---
+
+## 6. Open the Application
+
+Visit:
+
+```text
+http://localhost:5173
+```
+
+The CampusRide application should now be running locally.
+
+---
+
+## 🔑 Demo Accounts
+
+The application includes seeded demo accounts for quick testing.
+
+### Passenger Account
+
+| Email                                         | Password    |
+| --------------------------------------------- | ----------- |
+| [ananya@iitr.ac.in](mailto:ananya@iitr.ac.in) | password123 |
+
+### Driver Accounts
+
+| Email                                         | Password    |
+| --------------------------------------------- | ----------- |
+| [suresh@iitr.ac.in](mailto:suresh@iitr.ac.in) | password123 |
+| [mahesh@iitr.ac.in](mailto:mahesh@iitr.ac.in) | password123 |
+
+You may also create new Passenger or Driver accounts using the Sign Up page.
+
+---
+
+## 🧪 Testing the Workflow
+
+### Passenger Flow
+
+1. Login as Passenger
+2. Request a Ride
+3. Select Pickup Location
+4. Select Destination
+5. Submit Ride Request
+6. Track Ride Status in Real Time
+7. Complete Ride
+8. Submit Rating and Feedback
+
+### Driver Flow
+
+1. Login as Driver
+2. Set Availability to Online
+3. View Incoming Ride Requests
+4. Accept a Ride Request
+5. Start Ride
+6. Complete Ride
+7. View Updated Statistics on Dashboard
+
+---
+
+## 📡 Local Development Ports
+
+| Service          | URL                   |
+| ---------------- | --------------------- |
+| Frontend         | http://localhost:5173 |
+| Backend API      | http://localhost:5000 |
+| Socket.IO Server | http://localhost:5000 |
+
+Once both services are running, all ride requests, driver updates, ride lifecycle changes, analytics, and notifications will synchronize in real time through Socket.IO.
+
 
 ---
 
 ## 🧭 Feature List
 
-### Mandatory
 - ✅ **User Authentication & Profiles** — passenger & driver registration/login (JWT), driver vehicle + verification info, profile updates
 - ✅ **Driver Availability** — go online/offline; passengers see available drivers before requesting
 - ✅ **Ride Request Workflow** — request with pickup/destination; drivers view, accept, or reject; **one ride → one driver** (atomic)
@@ -165,10 +244,8 @@ Then open **http://localhost:5173**.
 - ✅ **Ride Lifecycle** — Requested → Accepted → In Progress → Completed → Cancelled, kept consistent across clients
 - ✅ **Driver Dashboard** — total/active/completed rides, earnings, ratings, charts, full ride history
 - ✅ **Ratings & Feedback** — passengers rate completed rides; driver averages + feedback history
-
-### Bonus
-- ⭐ **Live Map Integration** (Leaflet + OpenStreetMap) — pickup, destination & driver markers, route line
-- ⭐ **Demand Analytics** — peak demand hours, popular pickup locations, daily ride volume
+- ✅ **Live Map Integration** (Leaflet + OpenStreetMap) — pickup, destination & driver markers, route line
+- ✅ **Demand Analytics** — peak demand hours, popular pickup locations, daily ride volume
 
 ---
 
@@ -203,8 +280,6 @@ Base URL: `http://localhost:5000/api`
 `ride:new` · `ride:assigned` · `ride:updated` · `ride:cancelled` · `ride:requestClosed`
 · `driver:availability` · `driver:location`
 
-See [`docs/DESIGN_DOCUMENT.md`](docs/DESIGN_DOCUMENT.md) for architecture, schema, ERD and design decisions.
-
 ---
 
 ## 🧪 Notes on Reproducibility
@@ -214,5 +289,5 @@ See [`docs/DESIGN_DOCUMENT.md`](docs/DESIGN_DOCUMENT.md) for architecture, schem
 
 ---
 
-## 📜 License
-Released for academic evaluation under the MIT License. See [LICENSE](LICENSE).
+## Author
+Abhinav Kumar
