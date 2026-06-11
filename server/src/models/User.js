@@ -40,11 +40,10 @@ const userSchema = new Schema(
     passwordHash: { type: String, required: true, select: false },
     role: { type: String, enum: ['passenger', 'driver'], required: true },
 
-    // ── Driver-only fields ──────────────────────────────
     vehicle: { type: vehicleSchema, default: undefined },
     verification: { type: verificationSchema, default: undefined },
 
-    // Availability for drivers: 'available' = ready to take rides.
+    // Availability for drivers.
     isOnline: { type: Boolean, default: false },
     availabilityStatus: {
       type: String,
@@ -68,7 +67,6 @@ userSchema.methods.verifyPassword = function verifyPassword(plain) {
   return bcrypt.compare(plain, this.passwordHash);
 };
 
-// Public-safe representation (never leak the hash).
 userSchema.methods.toPublic = function toPublic() {
   const obj = this.toObject({ versionKey: false });
   delete obj.passwordHash;

@@ -1,12 +1,6 @@
-/**
- * Lightweight HTTP helpers shared across controllers.
- */
-
-// Wrap async route handlers so thrown errors reach the error middleware.
 export const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
-// An application error carrying an HTTP status code.
 export class ApiError extends Error {
   constructor(status, message) {
     super(message);

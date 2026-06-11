@@ -10,11 +10,6 @@ import {
   conflict,
 } from '../utils/http.js';
 
-/**
- * POST /api/ratings   (passenger only)
- * Body: { rideId, stars (1-5), feedback? }
- * Rates a completed ride and recomputes the driver's average rating.
- */
 export const createRating = asyncHandler(async (req, res) => {
   const { rideId, stars, feedback } = req.body;
   if (!rideId || stars == null) throw badRequest('rideId and stars are required');
@@ -42,14 +37,9 @@ export const createRating = asyncHandler(async (req, res) => {
   res.status(201).json({ rating });
 });
 
-/**
- * GET /api/ratings/driver/:id   — a driver's feedback history + summary.
- */
 export const getDriverRatings = asyncHandler(async (req, res) => {
   const driver = await User.findById(req.params.id).select('name ratingAvg ratingCount');
-  if (!driver || driver.role === 'passenger') {
-    // role not selected; just check existence
-  }
+  if (!driver || driver.role === 'passenger') {}
   const ratings = await Rating.find({ driver: req.params.id })
     .sort({ createdAt: -1 })
     .populate({ path: 'passenger', select: 'name' });

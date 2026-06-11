@@ -34,13 +34,12 @@ const rideSchema = new Schema(
       index: true,
     },
 
-    // Distance (km) and a simple estimated fare for the campus shuttle.
     distanceKm: { type: Number, default: 0 },
     fare: { type: Number, default: 0 },
 
     notes: { type: String, default: '' },
 
-    // Drivers who explicitly rejected — so we don't re-offer to them.
+    // Drivers who explicitly rejected - so we don't re-offer to them.
     rejectedBy: [{ type: Schema.Types.ObjectId, ref: 'User' }],
 
     // Lifecycle timestamps.
@@ -51,7 +50,7 @@ const rideSchema = new Schema(
     cancelledAt: { type: Date, default: null },
     cancelledBy: { type: String, enum: ['passenger', 'driver', null], default: null },
 
-    // Whether the passenger has rated this completed ride.
+    // If Passenger rated
     rated: { type: Boolean, default: false },
   },
   { timestamps: true }

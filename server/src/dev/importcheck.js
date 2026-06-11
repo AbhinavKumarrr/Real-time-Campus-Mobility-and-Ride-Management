@@ -1,8 +1,3 @@
-/**
- * Static load check — imports every backend module so that any syntax or
- * import error surfaces WITHOUT needing a database connection. Used for CI /
- * environments where the DB binary cannot run.
- */
 import { createApp } from '../app.js';
 import './../models/User.js';
 import './../models/Ride.js';

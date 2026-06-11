@@ -1,6 +1,3 @@
-/**
- * Haversine distance between two lat/lng points, in kilometres.
- */
 export function haversineKm(a, b) {
   if (!a || !b || a.lat == null || b.lat == null) return 0;
   const R = 6371; // Earth radius in km
@@ -15,12 +12,9 @@ export function haversineKm(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-/**
- * Simple, transparent campus fare model:
- *   base fare + per-km rate, rounded to the nearest rupee, min ₹10.
- */
+
 export function estimateFare(distanceKm) {
-  const BASE = 10; // ₹
-  const PER_KM = 12; // ₹/km
+  const BASE = 10;
+  const PER_KM = 12; 
   return Math.max(BASE, Math.round(BASE + distanceKm * PER_KM));
 }

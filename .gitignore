@@ -1,42 +1,30 @@
 # Dependencies
 node_modules/
-.pnp/
-.pnp.js
+client/node_modules/
+server/node_modules/
 
-# Build output
+# Build
 dist/
 build/
 client/dist/
 
 # Environment
 .env
-.env.local
-.env.*.local
-server/.env
+.env.*
+.env.example
 client/.env
+server/.env
+
+# Ignore docs and license
+docs/
+LICENSE
 
 # Logs
-logs/
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# Editor / OS
+# VS Code
 .vscode/
-.idea/
+
+# OS
 .DS_Store
 Thumbs.db
-
-# Misc / temp
-_pdf_text.txt
-*.tmp
-coverage/
-.cache/
-.mongo-data/
-
-
-client/node_modules/
-server/node_modules/
-
-*.env

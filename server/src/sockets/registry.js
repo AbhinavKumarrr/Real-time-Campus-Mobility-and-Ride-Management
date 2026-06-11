@@ -1,14 +1,3 @@
-/**
- * Holds the Socket.IO server instance and exposes typed emit helpers so
- * controllers can push real-time events without importing socket internals.
- *
- * Room conventions:
- *   user:<userId>   → a single user's private channel
- *   drivers         → all currently-connected drivers (ride broadcast)
- *   passengers      → all currently-connected passengers (availability feed)
- *   ride:<rideId>   → the passenger + driver bound to one ride
- */
-
 let io = null;
 
 export function setIO(instance) {
@@ -20,13 +9,13 @@ export function getIO() {
 }
 
 export const SocketEvents = {
-  RIDE_NEW: 'ride:new', // → drivers: a new request is available
-  RIDE_ASSIGNED: 'ride:assigned', // → passenger: a driver accepted
-  RIDE_UPDATED: 'ride:updated', // → ride room: status/lifecycle change
-  RIDE_CANCELLED: 'ride:cancelled', // → ride room
-  RIDE_REQUEST_CLOSED: 'ride:requestClosed', // → drivers: request no longer available
-  DRIVER_AVAILABILITY: 'driver:availability', // → passengers: online list changed
-  DRIVER_LOCATION: 'driver:location', // → passengers / ride room: live position
+  RIDE_NEW: 'ride:new',
+  RIDE_ASSIGNED: 'ride:assigned', 
+  RIDE_UPDATED: 'ride:updated',
+  RIDE_CANCELLED: 'ride:cancelled',
+  RIDE_REQUEST_CLOSED: 'ride:requestClosed',
+  DRIVER_AVAILABILITY: 'driver:availability', 
+  DRIVER_LOCATION: 'driver:location', 
 };
 
 export function emitToUser(userId, event, payload) {

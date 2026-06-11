@@ -2,10 +2,7 @@ import User from '../models/User.js';
 import { signToken } from '../utils/token.js';
 import { asyncHandler, badRequest, unauthorized } from '../utils/http.js';
 
-/**
- * POST /api/auth/register
- * Body: { name, email, password, phone, role, vehicle?, verification? }
- */
+
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password, phone, role, vehicle, verification } = req.body;
 
@@ -32,7 +29,6 @@ export const register = asyncHandler(async (req, res) => {
     };
     user.verification = {
       licenseNumber: verification?.licenseNumber || '',
-      // Auto-verify in this campus demo; a real system would review docs.
       verified: true,
     };
   }
@@ -42,10 +38,6 @@ export const register = asyncHandler(async (req, res) => {
   res.status(201).json({ token, user: user.toPublic() });
 });
 
-/**
- * POST /api/auth/login
- * Body: { email, password }
- */
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) throw badRequest('email and password are required');
@@ -60,17 +52,10 @@ export const login = asyncHandler(async (req, res) => {
   res.json({ token, user: user.toPublic() });
 });
 
-/**
- * GET /api/auth/me
- */
 export const me = asyncHandler(async (req, res) => {
   res.json({ user: req.user.toPublic() });
 });
 
-/**
- * PATCH /api/auth/profile
- * Updatable: name, phone, and (drivers) vehicle / verification.licenseNumber
- */
 export const updateProfile = asyncHandler(async (req, res) => {
   const { name, phone, vehicle, verification } = req.body;
   const user = req.user;

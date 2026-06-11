@@ -22,17 +22,13 @@ const RIDE_POPULATE = [
 
 const populated = (id) => Ride.findById(id).populate(RIDE_POPULATE);
 
-/**
- * POST /api/rides   (passenger only)
- * Body: { pickup:{label,lat,lng}, destination:{label,lat,lng}, notes? }
- */
 export const requestRide = asyncHandler(async (req, res) => {
   const { pickup, destination, notes } = req.body;
   if (!pickup?.label || pickup.lat == null || !destination?.label || destination.lat == null) {
     throw badRequest('pickup and destination (label, lat, lng) are required');
   }
 
-  // Guard: one active ride per passenger at a time.
+  // One active ride per passenger at a time.
   const active = await Ride.findOne({
     passenger: req.user._id,
     status: { $in: ['requested', 'accepted', 'in_progress'] },
@@ -53,16 +49,11 @@ export const requestRide = asyncHandler(async (req, res) => {
 
   const full = await populated(ride._id);
 
-  // Broadcast the new request to all connected drivers.
   emitToDrivers(SocketEvents.RIDE_NEW, full);
 
   res.status(201).json({ ride: full });
 });
 
-/**
- * GET /api/rides   — the caller's rides (passenger or driver), newest first.
- * Optional ?status=requested,accepted
- */
 export const listMyRides = asyncHandler(async (req, res) => {
   const filter = req.user.role === 'passenger'
     ? { passenger: req.user._id }
@@ -76,10 +67,6 @@ export const listMyRides = asyncHandler(async (req, res) => {
   res.json({ rides });
 });
 
-/**
- * GET /api/rides/requests   (driver only)
- * Open ride requests this driver can accept (not yet assigned, not rejected by them).
- */
 export const listOpenRequests = asyncHandler(async (req, res) => {
   const rides = await Ride.find({
     status: 'requested',
@@ -91,9 +78,6 @@ export const listOpenRequests = asyncHandler(async (req, res) => {
   res.json({ rides });
 });
 
-/**
- * GET /api/rides/:id   — participants only.
- */
 export const getRide = asyncHandler(async (req, res) => {
   const ride = await populated(req.params.id);
   if (!ride) throw notFound('Ride not found');
@@ -101,11 +85,6 @@ export const getRide = asyncHandler(async (req, res) => {
   res.json({ ride });
 });
 
-/**
- * PATCH /api/rides/:id/accept   (driver only)
- * Atomic single-driver assignment: the update only succeeds if the ride is
- * still 'requested' and unassigned, guaranteeing exactly one driver wins.
- */
 export const acceptRide = asyncHandler(async (req, res) => {
   const ride = await Ride.findOneAndUpdate(
     { _id: req.params.id, status: 'requested', driver: null },
@@ -116,14 +95,13 @@ export const acceptRide = asyncHandler(async (req, res) => {
   );
 
   if (!ride) {
-    // Either it doesn't exist or another driver already grabbed it.
     const exists = await Ride.exists({ _id: req.params.id });
     throw exists
       ? conflict('This ride has already been taken')
       : notFound('Ride not found');
   }
 
-  // Mark the driver busy.
+  // Driver busy.
   await User.findByIdAndUpdate(req.user._id, { availabilityStatus: 'busy' });
 
   const full = await populated(ride._id);
@@ -135,9 +113,6 @@ export const acceptRide = asyncHandler(async (req, res) => {
   res.json({ ride: full });
 });
 
-/**
- * PATCH /api/rides/:id/reject   (driver only) — hide this request from me.
- */
 export const rejectRide = asyncHandler(async (req, res) => {
   const ride = await Ride.findById(req.params.id);
   if (!ride) throw notFound('Ride not found');
@@ -150,9 +125,6 @@ export const rejectRide = asyncHandler(async (req, res) => {
   res.json({ ok: true });
 });
 
-/**
- * PATCH /api/rides/:id/start   (assigned driver) — accepted → in_progress.
- */
 export const startRide = asyncHandler(async (req, res) =>
   transition(req, res, {
     from: 'accepted',
@@ -162,9 +134,6 @@ export const startRide = asyncHandler(async (req, res) =>
   })
 );
 
-/**
- * PATCH /api/rides/:id/complete   (assigned driver) — in_progress → completed.
- */
 export const completeRide = asyncHandler(async (req, res) =>
   transition(req, res, {
     from: 'in_progress',
@@ -172,16 +141,11 @@ export const completeRide = asyncHandler(async (req, res) =>
     role: 'driver',
     stamp: 'completedAt',
     after: async (ride) => {
-      // Free the driver up again.
       await User.findByIdAndUpdate(ride.driver, { availabilityStatus: 'available' });
     },
   })
 );
 
-/**
- * PATCH /api/rides/:id/cancel   (passenger or assigned driver)
- * Allowed while requested / accepted / in_progress.
- */
 export const cancelRide = asyncHandler(async (req, res) => {
   const ride = await Ride.findById(req.params.id);
   if (!ride) throw notFound('Ride not found');
@@ -204,13 +168,11 @@ export const cancelRide = asyncHandler(async (req, res) => {
   emitToRide(ride._id, SocketEvents.RIDE_CANCELLED, full);
   emitToUser(ride.passenger, SocketEvents.RIDE_CANCELLED, full);
   if (ride.driver) emitToUser(ride.driver, SocketEvents.RIDE_CANCELLED, full);
-  // If it was still open, let drivers drop it from their queue.
   emitToDrivers(SocketEvents.RIDE_REQUEST_CLOSED, { rideId: ride._id });
 
   res.json({ ride: full });
 });
 
-// ── Helpers ───────────────────────────────────────────────
 
 function assertParticipant(ride, user) {
   const isPassenger = ride.passenger.equals(user._id);
@@ -218,9 +180,7 @@ function assertParticipant(ride, user) {
   if (!isPassenger && !isDriver) throw forbidden('You are not part of this ride');
 }
 
-/**
- * Generic guarded status transition driven by the assigned driver.
- */
+
 async function transition(req, res, { from, to, role, stamp, after }) {
   const ride = await Ride.findById(req.params.id);
   if (!ride) throw notFound('Ride not found');

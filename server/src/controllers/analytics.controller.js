@@ -5,11 +5,6 @@ import { asyncHandler } from '../utils/http.js';
 
 const oid = (id) => new mongoose.Types.ObjectId(id);
 
-/**
- * GET /api/analytics/driver   (driver only)
- * Powers the Driver Dashboard: summary cards, status breakdown, rides-over-time,
- * earnings, recent ratings.
- */
 export const driverDashboard = asyncHandler(async (req, res) => {
   const driverId = oid(req.user._id);
 
@@ -36,7 +31,7 @@ export const driverDashboard = asyncHandler(async (req, res) => {
     { $group: { _id: null, earnings: { $sum: '$fare' }, distance: { $sum: '$distanceKm' } } },
   ]);
 
-  // Completed rides per day for the last 7 days (chart series).
+  // Completed rides per day for the last 7 days.
   const ridesPerDay = await Ride.aggregate([
     { $match: { driver: driverId, status: 'completed' } },
     {
@@ -72,25 +67,22 @@ export const driverDashboard = asyncHandler(async (req, res) => {
   });
 });
 
-/**
- * GET /api/analytics/demand   (any authenticated user) — BONUS
- * Campus-wide demand insights: peak hours, popular pickups, daily volume.
- */
+
 export const demandAnalytics = asyncHandler(async (req, res) => {
-  // Rides per hour of day (peak demand hours).
+  // Rides per hour of day.
   const peakHours = await Ride.aggregate([
     { $group: { _id: { $hour: '$requestedAt' }, rides: { $sum: 1 } } },
     { $sort: { _id: 1 } },
   ]);
 
-  // Most popular pickup points.
+  // Popular pickup points.
   const popularPickups = await Ride.aggregate([
     { $group: { _id: '$pickup.label', rides: { $sum: 1 } } },
     { $sort: { rides: -1 } },
     { $limit: 8 },
   ]);
 
-  // Daily ride volume (demand pattern over time).
+  // Daily ride volume.
   const dailyVolume = await Ride.aggregate([
     {
       $group: {

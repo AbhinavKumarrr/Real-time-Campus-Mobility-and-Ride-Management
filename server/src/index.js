@@ -9,8 +9,6 @@ import { seedDatabase } from './seed/seedData.js';
 async function start() {
   await connectDB();
 
-  // With the ephemeral in-memory DB, auto-seed on startup so the app has
-  // demo data without a separate `npm run seed` step.
   if (env.useMemoryDb) {
     const count = await User.estimatedDocumentCount();
     if (count === 0) {

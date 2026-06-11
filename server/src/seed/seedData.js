@@ -1,8 +1,3 @@
-/**
- * Core seeding logic, reusable by both the CLI (`npm run seed`) and the
- * server's auto-seed on startup (when running the in-memory DB).
- * Assumes a DB connection is already established.
- */
 import User from '../models/User.js';
 import Ride from '../models/Ride.js';
 import Rating from '../models/Rating.js';
@@ -22,7 +17,6 @@ const PLACE_LIST = Object.values(PLACES);
 
 const pick = (arr, i) => arr[i % arr.length];
 
-// Deterministic pseudo-random so the seed is reproducible across runs.
 function prng(seed) {
   let s = seed % 2147483647;
   if (s <= 0) s += 2147483646;
@@ -34,7 +28,7 @@ export async function seedDatabase({ log = () => {} } = {}) {
 
   const password = 'password123';
 
-  // ── Passengers ──────────────────────────────────────
+  // Default Passengers
   const passengerData = [
     { name: 'Ananya Sharma', email: 'ananya@iitr.ac.in' },
     { name: 'Rahul Verma', email: 'rahul@iitr.ac.in' },
@@ -48,7 +42,7 @@ export async function seedDatabase({ log = () => {} } = {}) {
     passengers.push(u);
   }
 
-  // ── Drivers ─────────────────────────────────────────
+  // Default Drivers
   const driverData = [
     { name: 'Suresh Kumar', email: 'suresh@iitr.ac.in', plate: 'UK07 1234', color: 'Green' },
     { name: 'Mahesh Singh', email: 'mahesh@iitr.ac.in', plate: 'UK07 5678', color: 'Yellow' },
@@ -73,7 +67,7 @@ export async function seedDatabase({ log = () => {} } = {}) {
     drivers.push(u);
   }
 
-  // ── Historical rides (spread across last 7 days & all hours) ──
+  // Historical rides
   const rand = prng(42);
   const now = Date.now();
   const DAY = 24 * 60 * 60 * 1000;
@@ -115,7 +109,7 @@ export async function seedDatabase({ log = () => {} } = {}) {
     rides.push(ride);
   }
 
-  // ── Ratings for ~70% of completed rides ──────────────
+  // Feedbacks
   const feedbacks = [
     'Smooth and quick ride!',
     'Driver was very polite.',

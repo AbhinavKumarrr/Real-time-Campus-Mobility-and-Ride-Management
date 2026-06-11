@@ -3,11 +3,6 @@ import env from './env.js';
 
 let memoryServer = null;
 
-/**
- * Connect to MongoDB. If USE_MEMORY_DB=true, spin up an in-memory MongoDB
- * instance (mongodb-memory-server) so the app can run with zero external
- * setup — ideal for quick demos and evaluation.
- */
 export async function connectDB() {
   let uri = env.mongoUri;
 
