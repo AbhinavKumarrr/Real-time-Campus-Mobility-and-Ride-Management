@@ -8,7 +8,7 @@ async function run() {
   await seedDatabase({ log: (m) => console.log('   ' + m) });
   console.log('Seed complete.');
   console.log('\n   Demo logins (password: password123):');
-  console.log('   Passenger → ananya@iitr.ac.in');
+  console.log('   Passenger → abhinav@iitr.ac.in');
   console.log('   Driver    → suresh@iitr.ac.in\n');
   await disconnectDB();
   await mongoose.connection.close();
