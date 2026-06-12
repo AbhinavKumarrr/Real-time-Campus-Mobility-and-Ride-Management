@@ -6,9 +6,7 @@ It is designed around the last-mile transportation problem seen in large campuse
 
 ---
 
-## 🎥 Demo Video
-
-📹 Google Drive Demo:
+## 🎥 Demo Video:
 https://drive.google.com/file/d/1CofYSgjEdH5VJOJKVUgZFrehwVCxXjHr/view?usp=drive_link
 
 ## 📄 Project Report:
