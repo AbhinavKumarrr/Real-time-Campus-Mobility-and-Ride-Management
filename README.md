@@ -9,7 +9,10 @@ It is designed around the last-mile transportation problem seen in large campuse
 ## 🎥 Demo Video
 
 📹 Google Drive Demo:
-https://drive.google.com/drive/folders/1mTul5aC9R1DAcm_5tTTRYiAgT6nDYvL9?usp=drive_link
+https://drive.google.com/file/d/1CofYSgjEdH5VJOJKVUgZFrehwVCxXjHr/view?usp=drive_link
+
+## 📄 Project Report:
+https://drive.google.com/file/d/1I5khbqxrj25_FCYMTda4wQocLF9gSiG0/view?usp=drive_link
 
 ## 🌐 Project Repository
 https://github.com/AbhinavKumarrr/Real-time-Campus-Mobility-and-Ride-Management
