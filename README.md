@@ -184,7 +184,7 @@ The application includes seeded demo accounts for quick testing.
 
 | Email                                         | Password    |
 | --------------------------------------------- | ----------- |
-| [ananya@iitr.ac.in](mailto:ananya@iitr.ac.in) | password123 |
+| [abhinav@iitr.ac.in](mailto:abhinav@iitr.ac.in) | password123 |
 
 ### Driver Accounts
 
