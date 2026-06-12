@@ -30,9 +30,9 @@ export async function seedDatabase({ log = () => {} } = {}) {
 
   // Default Passengers
   const passengerData = [
-    { name: 'Ananya Sharma', email: 'ananya@iitr.ac.in' },
-    { name: 'Rahul Verma', email: 'rahul@iitr.ac.in' },
-    { name: 'Priya Nair', email: 'priya@iitr.ac.in' },
+    { name: 'Abhinav Kumar', email: 'abhinav@iitr.ac.in' },
+    { name: 'Kalpesh Jagtap', email: 'kalpesh@iitr.ac.in' },
+    { name: 'Aditya Gaurav', email: 'aditya@iitr.ac.in' },
   ];
   const passengers = [];
   for (const p of passengerData) {
